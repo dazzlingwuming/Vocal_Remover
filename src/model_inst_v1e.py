@@ -1,4 +1,9 @@
 import os
+import subprocess
+import tempfile
+import soundfile as sf
+import librosa
+import numpy as np
 import torch
 import yaml
 from ml_collections import ConfigDict
@@ -52,9 +57,120 @@ def model_run(model, config, device):
 		except Exception as e:
 			print(f"❌ 前向传播失败：{str(e)}")
 			return False
+
+# 用 ffmpeg 将任何音频文件解码为 wav 并读取为 numpy
+# ------------------------------------------------------------
+def load_audio_ffmpeg(audio_path, target_sr=44100):
+    """
+    使用 ffmpeg 解码音频，返回 (audio_np: (channels, samples), sample_rate)
+    """
+    if not os.path.exists(audio_path):
+        raise FileNotFoundError(f"文件不存在: {audio_path}")
+
+    # 临时 wav 文件
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmpfile:
+        tmp_wav = tmpfile.name
+
+    # 调用 ffmpeg 转换为目标采样率的 wav（立体声）
+    cmd = [
+        "ffmpeg", "-i", audio_path,
+        "-ar", str(target_sr),
+        "-ac", "2",
+        "-f", "wav",
+        "-y", tmp_wav
+    ]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"ffmpeg 转换失败: {e.stderr.decode()}")
+
+    # 读取 wav 文件
+    data, sr = sf.read(tmp_wav, always_2d=True)   # data shape: (samples, channels)
+    # 转置为 (channels, samples)
+    audio_np = data.T
+    os.unlink(tmp_wav)  # 删除临时文件
+    return audio_np, sr
+
+# 分块推理：避免长音频显存不足
+# ------------------------------------------------------------
+def process_chunks(model, audio_tensor, device, chunk_duration=10.0, sr=44100):
+    total_samples = audio_tensor.shape[-1]
+    chunk_samples = int(chunk_duration * sr)
+    num_chunks = (total_samples + chunk_samples - 1) // chunk_samples
+
+    instrumental_chunks = []
+    vocal_chunks = []
+
+    with torch.no_grad():
+        for i in range(num_chunks):
+            start = i * chunk_samples
+            end = min(start + chunk_samples, total_samples)
+            chunk = audio_tensor[:, :, start:end].to(device)
+            inst_chunk = model(chunk)
+            # 对齐长度：取两个张量长度的最小值
+            min_len = min(chunk.shape[-1], inst_chunk.shape[-1])
+            chunk = chunk[:, :, :min_len]          # 裁剪输入
+            inst_chunk = inst_chunk[:, :, :min_len] # 裁剪输出
+            voc_chunk = chunk - inst_chunk
+            instrumental_chunks.append(inst_chunk.cpu())
+            vocal_chunks.append(voc_chunk.cpu())
+
+    # 拼接所有块
+    instrumental = torch.cat(instrumental_chunks, dim=-1)
+    vocal = torch.cat(vocal_chunks, dim=-1)
+    # 最终长度可能略小于原始 total_samples（每块丢弃了尾部几个样本），不影响使用
+    return instrumental, vocal
+
+# 新增：模型推理得到伴奏，然后相减得到人声
+# ------------------------------------------------------------
+def extract_vocal_by_subtraction(model, audio_tensor, device):
+    """
+    audio_tensor: (1, channels, samples)
+    返回: instrumental_tensor, vocal_tensor (形状相同)
+    """
+    with torch.no_grad():
+        audio_tensor = audio_tensor.to(device)
+        instrumental = model(audio_tensor)          # 模型输出伴奏
+        vocal = audio_tensor - instrumental         # 原始减伴奏 = 人声
+    return instrumental.cpu(), vocal.cpu()
+
+
+
+# 主流程
+# ------------------------------------------------------------
 if __name__ == "__main__":
-	weights_path = "../models/inst_v1e.ckpt"
-	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-	model, config = get_model_from_config("../configs/inst_v1e.ckpt.yaml",weights_path=weights_path,device=device)
-	print(model)
-	model_run(model, config, device)
+    # 配置路径
+    weights_path = "../models/inst_v1e.ckpt"
+    config_path = "../configs/inst_v1e.ckpt.yaml"
+    input_audio = r"D:\github\Vocal_Remover\Bili_video_audio\output\《不凡2024》4K动画韩立结婴曲 王铮亮_1774767238\audio.m4s"
+    output_dir = os.path.dirname(input_audio)
+
+    # 输出文件
+    instrumental_path = os.path.join(output_dir, "instrumental.wav")
+    vocal_path = os.path.join(output_dir, "vocal.wav")
+
+    # 加载模型
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model, config = get_model_from_config(config_path, weights_path=weights_path, device=device)
+
+    # 加载音频 (用 ffmpeg)
+    print(f"加载音频: {input_audio}")
+    audio_np, sr = load_audio_ffmpeg(input_audio, target_sr=config.audio.sample_rate)
+    print(f"音频形状 (channels, samples): {audio_np.shape}, 采样率: {sr}")
+
+    # 转换为 torch tensor
+    audio_tensor = torch.from_numpy(audio_np).float().unsqueeze(0)  # (1, channels, samples)
+
+    # 分离（分块，每块10秒，可根据显存调整）
+    print("正在分离伴奏（分块推理）...")
+    instrumental, vocal = process_chunks(model, audio_tensor, device, chunk_duration=10.0, sr=sr)
+
+    # 保存
+    instrumental_np = instrumental.squeeze(0).numpy().T  # (samples, channels)
+    vocal_np = vocal.squeeze(0).numpy().T
+
+    sf.write(instrumental_path, instrumental_np, sr)
+    sf.write(vocal_path, vocal_np, sr)
+
+    print(f"✅ 伴奏已保存: {instrumental_path}")
+    print(f"✅ 人声已保存: {vocal_path}")

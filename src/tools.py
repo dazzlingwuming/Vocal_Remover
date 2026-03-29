@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 temp_wav = None
 
 
-# ===================== 1. 手动初始化MelBandRoformer模型（无复杂依赖） =====================
+# ===================== 1. 手动初始化MelBandRoformer模型=====================
 def init_mel_band_roformer(config_path, weights_path, device):
     """
     直接初始化模型，绕过utils/utils的复杂导入
@@ -196,8 +196,8 @@ if __name__ == "__main__":
     # ********** 请根据你的路径修改 **********
     CONFIG_PATH = "../configs/inst_v1e.ckpt.yaml"  # 配置文件
     WEIGHTS_PATH = "../models/inst_v1e.ckpt"  # 权重文件
-    INPUT_AUDIO = "../input/qqqq.m4a"  # 输入音频
-    OUTPUT_AUDIO = "../output/separated.wav"  # 输出音频
+    INPUT_AUDIO = "../Bili_video_audio/output/《青花瓷》完整版_周杰伦。 天青色等烟雨，而我在等你。/audio.m4s"  # 输入音频
+    OUTPUT_AUDIO = "../output/青花瓷.wav"  # 输出音频
     # ****************************************
 
     # 设备选择
