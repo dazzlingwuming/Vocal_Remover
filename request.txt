@@ -1,0 +1,10 @@
+﻿flask>=3.0.0
+requests>=2.31.0
+numpy>=1.24.0
+torch>=2.1.0
+Pillow>=10.0.0
+bilibili-api-python>=16.3.0
+PyYAML>=6.0.1
+soundfile>=0.12.1
+librosa>=0.10.1
+ml-collections>=0.1.1
