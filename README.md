@@ -27,14 +27,44 @@
 - Python 3.10+（建议 3.10/3.11）
 - FFmpeg（需加入 PATH）
 - Windows / Linux 均可（当前主要在 Windows 场景验证）
+- PyTorch（CPU 或 CUDA 版本，见下方安装说明）
 
-## 安装依赖
+## 安装步骤
+
+### 1) 安装 PyTorch
+
+请按你的机器环境选择其一：
+
+- `CPU`：
+
+```bash
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+- `NVIDIA CUDA 12.1`：
+
+```bash
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+```
+
+### 2) 安装项目依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 启动
+### 3) 准备模型权重（必须）
+
+本仓库默认**不包含大模型权重文件**（通常不会上传到 GitHub）。
+
+请自行下载并放到以下路径：
+
+- 权重文件：`models/inst_v1e.ckpt`
+- 配置文件：`configs/inst_v1e.ckpt.yaml`（仓库已提供）
+
+如果 `models/inst_v1e.ckpt` 缺失，分离伴奏/人声功能无法工作。
+
+### 4) 启动服务
 
 ```bash
 python Bili_video_audio/falsk_reseach/flask_search.py
@@ -48,6 +78,14 @@ python Bili_video_audio/falsk_reseach/flask_search.py
 2. 手机扫码进入：`http://<电脑IP>:5000/mobile?room=ktv001`
 3. 手机端搜索歌曲，点击“提取并点歌”
 4. TV 端自动进入队列播放
+
+## 首次运行自检
+
+启动后建议先做这 3 项检查：
+
+1. 打开 `http://127.0.0.1:5000/api/ping`，确认服务在线
+2. 在网页执行一次“提取并点歌”，确认音视频提取正常
+3. 执行一次“分离伴奏/人声”，确认模型加载和推理正常
 
 ## 重要说明
 
@@ -75,6 +113,14 @@ python Bili_video_audio/falsk_reseach/flask_search.py
 ### 3) 切歌后声音异常
 
 建议先确认当前模式（原唱/伴奏）和人声/伴奏音量状态是否符合预期。
+
+### 4) 分离功能不可用 / 报模型相关错误
+
+优先检查：
+
+- `models/inst_v1e.ckpt` 是否存在且文件完整
+- `configs/inst_v1e.ckpt.yaml` 是否存在
+- `torch` 是否正确安装（CPU/CUDA 版本是否匹配你的环境）
 
 ## Roadmap
 
