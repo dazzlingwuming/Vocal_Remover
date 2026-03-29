@@ -55,7 +55,7 @@ pip install -r requirements.txt
 
 ### 3) 准备模型权重（必须）
 
-本仓库默认**不包含大模型权重文件**（通常不会上传到 GitHub）。
+本仓库默认**不包含大模型权重文件**（https://huggingface.co/Sucial/MSST-WebUI/blob/main/All_Models/vocal_models/inst_v1e.ckpt）。
 
 请自行下载并放到以下路径：
 
