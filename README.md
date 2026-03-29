@@ -73,9 +73,9 @@ python Bili_video_audio/falsk_reseach/flask_search.py
 默认监听：`0.0.0.0:5000`
 
 ## 使用方式
-
-1. 打开 TV 页面：`http://<电脑IP>:5000/tv?room=ktv001`
-2. 手机扫码进入：`http://<电脑IP>:5000/mobile?room=ktv001`
+![img_2.png](img_2.png)![img.png](img.png)
+1. 打开 TV 页面：`http://<电脑IP>:5000/tv?room=ktv001`![img_1.png](img_1.png)
+2. 手机扫码进入：`http://<电脑IP>:5000/mobile?room=ktv001`![img_3.png](img_3.png)
 3. 手机端搜索歌曲，点击“提取并点歌”
 4. TV 端自动进入队列播放
 
