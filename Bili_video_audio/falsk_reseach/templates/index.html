@@ -1,41 +1,43 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>KTV 点歌台</title>
 <style>
-:root{--bg:#120b08;--bg2:#1e120d;--card:#2b1a12;--line:#68412e;--txt:#ffe4c2;--sub:#c8aa86;--pri:#ef6b3f;--pri2:#ff8a4a}
-*{box-sizing:border-box}body{margin:0;color:var(--txt);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;background:radial-gradient(1000px 520px at 6% -10%,#4c2a1d88,transparent),linear-gradient(160deg,var(--bg),var(--bg2))}
-.page{max-width:1780px;margin:0 auto;padding:14px;display:grid;gap:12px;grid-template-columns:1.05fr 1.6fr .95fr}
-.card{background:linear-gradient(170deg,#352015cc,var(--card));border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.head{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#4a2d1f66}
-.body{padding:12px}.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-input{flex:1;min-width:0;padding:10px;border-radius:8px;border:1px solid var(--line);background:#1e120d;color:var(--txt)}
-button{padding:9px 12px;border-radius:8px;border:1px solid transparent;background:linear-gradient(180deg,var(--pri2),var(--pri));color:#fff4e2;cursor:pointer;font-weight:600}
-button.ghost{background:#3d271b;color:#ffd9ad;border-color:var(--line)}button.warn{background:#d69a3a;color:#2e1a10}
+:root{--bg:#0d1117;--bg2:#111827;--bg3:#1f2937;--card:#111827cc;--line:#334155;--txt:#f8fafc;--sub:#94a3b8;--pri:#06b6d4;--pri2:#22d3ee;--acc:#f59e0b;--danger:#ef4444}
+*{box-sizing:border-box}body{margin:0;color:var(--txt);font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;background:radial-gradient(1200px 700px at 10% -10%,#0ea5e955,transparent),radial-gradient(900px 540px at 100% 0,#f59e0b22,transparent),linear-gradient(145deg,var(--bg),var(--bg2) 55%,#0f172a)}
+.page{max-width:1780px;margin:0 auto;padding:18px;display:grid;gap:16px;grid-template-columns:1.05fr 1.6fr .95fr}
+.card{background:linear-gradient(180deg,#111827ee,var(--card));border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 60px #00000030;backdrop-filter:blur(14px)}
+.head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,#1e293bcc,#11182766);font-weight:700}
+.body{padding:16px}.row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+input{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid #3b475b;background:#0f172a;color:var(--txt);outline:none}
+input:focus{border-color:#38bdf8;box-shadow:0 0 0 3px #0ea5e922}
+button{padding:10px 14px;border-radius:14px;border:1px solid transparent;background:linear-gradient(180deg,var(--pri2),var(--pri));color:#06202a;cursor:pointer;font-weight:700}
+button.ghost{background:#162132;color:#dbeafe;border-color:#334155}button.warn{background:#7f1d1d;color:#fee2e2;border-color:#b91c1c}
 button:disabled{opacity:.5;cursor:not-allowed}
 .status{font-size:12px;color:var(--sub);min-height:17px;word-break:break-all}
-.list{max-height:360px;overflow:auto;display:grid;gap:8px}.item{border:1px solid var(--line);border-radius:10px;padding:8px;background:#1f120dcc}
-.item.sel{border-color:#ff8f58;box-shadow:inset 0 0 0 1px #ff8f58}
-.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:10px}
-.pager button{padding:6px 10px;font-size:12px}
-.pager .active{background:linear-gradient(180deg,var(--pri2),var(--pri));border-color:#ff8f58}
-.result{display:grid;grid-template-columns:92px 1fr auto;gap:8px;align-items:center}.thumb{width:92px;height:52px;object-fit:cover;border-radius:6px;background:#2b1a12}
-.t{font-size:14px;color:#ffd9ab;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.s{font-size:12px;color:var(--sub);margin-top:4px}
-.player{display:grid;grid-template-columns:250px 1fr;gap:12px}.cover{width:100%;min-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#1d110d}
-h2{margin:0;font-size:32px;line-height:1.15}.meta{margin:8px 0 0;font-size:13px;color:var(--sub)}
-.mode{display:flex;gap:8px;margin-top:10px}.mode button.active{background:linear-gradient(180deg,var(--pri2),var(--pri));border-color:#ff8f58}
-.mix{display:grid;grid-template-columns:90px 1fr 48px;gap:8px;align-items:center;margin-top:8px}
+.list{max-height:420px;overflow:auto;display:grid;gap:10px;padding-right:2px}.item{border:1px solid #334155;border-radius:18px;padding:10px;background:linear-gradient(180deg,#0f172add,#111827cc)}
+.item.sel{border-color:#38bdf8;box-shadow:inset 0 0 0 1px #38bdf8,0 0 0 4px #0ea5e91a}
+.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:12px}
+.pager button{padding:7px 11px;font-size:12px}
+.pager .active{background:linear-gradient(180deg,var(--pri2),var(--pri));border-color:#67e8f9}
+.result{display:grid;grid-template-columns:104px 1fr auto;gap:10px;align-items:center}.thumb{width:104px;height:60px;object-fit:cover;border-radius:12px;background:#0f172a}
+.t{font-size:14px;color:#f8fafc;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.s{font-size:12px;color:var(--sub);margin-top:6px}
+.player{display:grid;grid-template-columns:280px 1fr;gap:14px}.cover{width:100%;min-height:240px;object-fit:cover;border-radius:18px;border:1px solid #334155;background:#0f172a}
+h2{margin:0;font-size:34px;line-height:1.15}.meta{margin:10px 0 0;font-size:13px;color:var(--sub)}
+.mode{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}.mode button.active{background:linear-gradient(180deg,#fde68a,#f59e0b);color:#3b1d00;border-color:#fbbf24}
+.mix{display:grid;grid-template-columns:90px 1fr 48px;gap:8px;align-items:center;margin-top:10px}
 .mix label{font-size:12px;color:var(--sub)}
-.mix input[type=range]{width:100%}
-audio{width:100%;margin-top:10px}.video{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;display:flex;justify-content:center}
-video{width:min(100%,1120px);min-height:500px;max-height:760px;display:block;object-fit:contain}
-.tag{font-size:12px;background:#ffc484;color:#2a170b;border-radius:999px;padding:2px 9px;font-weight:700}
-.toast{position:fixed;right:16px;bottom:16px;background:#2a1a12ee;border:1px solid #8c5b40;border-radius:8px;padding:8px 10px;opacity:0;transform:translateY(5px);transition:.2s}
+.mix input[type=range]{width:100%;accent-color:#22d3ee}
+audio{width:100%;margin-top:12px}.video{margin-top:12px;border:1px solid #334155;border-radius:18px;overflow:hidden;background:#020617;display:flex;justify-content:center}
+video{width:min(100%,1120px);min-height:520px;max-height:760px;display:block;object-fit:contain}
+.tag{font-size:12px;background:#f59e0b;color:#1f1300;border-radius:999px;padding:4px 10px;font-weight:800}
+.toast{position:fixed;right:18px;bottom:18px;background:#0f172aed;border:1px solid #334155;border-radius:12px;padding:10px 12px;opacity:0;transform:translateY(5px);transition:.2s}
 .toast.show{opacity:1;transform:none}
-@media(max-width:1320px){.page{grid-template-columns:1fr}.player{grid-template-columns:1fr}.cover{min-height:170px;max-height:300px}}
-@media(max-width:580px){h2{font-size:24px}.result{grid-template-columns:80px 1fr}.result>div:last-child{grid-column:span 2}.thumb{width:80px;height:45px}video{min-height:220px}}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:#334155;border-radius:999px}
+@media(max-width:1320px){.page{grid-template-columns:1fr}.player{grid-template-columns:1fr}.cover{min-height:170px;max-height:320px}}
+@media(max-width:580px){.page{padding:12px}h2{font-size:24px}.result{grid-template-columns:1fr}.result>div:last-child{grid-column:auto}.thumb{width:100%;height:160px}video{min-height:220px}}
 </style>
 </head>
 <body>
@@ -46,15 +48,15 @@ video{width:min(100%,1120px);min-height:500px;max-height:760px;display:block;obj
 <div class="row"><button id="extractBtn" class="ghost">提取音视频</button><button id="separateBtn" class="ghost">分离伴奏</button><button id="vocalBtn" class="ghost">人声提取</button></div>
 <div id="targetText" class="status">操作目标: 未选择</div><div id="statusText" class="status">ready</div>
 </div></div>
-<div class="card" style="margin-top:12px"><div class="head"><span>搜索结果</span><span id="resultCountText" class="tag">0</span></div><div class="body"><div id="resultList" class="list"></div><div id="resultPager" class="pager"></div></div></div>
-<div class="card" style="margin-top:12px"><div class="head"><span>本地媒体库</span><button id="refreshLocalBtn" class="ghost">刷新</button></div><div class="body">
+<div class="card" style="margin-top:16px"><div class="head"><span>搜索结果</span><span id="resultCountText" class="tag">0</span></div><div class="body"><div id="resultList" class="list"></div><div id="resultPager" class="pager"></div></div></div>
+<div class="card" style="margin-top:16px"><div class="head"><span>本地媒体库</span><button id="refreshLocalBtn" class="ghost">刷新</button></div><div class="body">
 <div class="row"><input id="localSearchInput" placeholder="搜索本地歌曲"><button id="localSearchBtn" class="ghost">筛选</button></div>
 <div id="localSearchStat" class="status">本地搜索: 全部</div><div id="localList" class="list"></div>
 </div></div>
 </section>
 <section>
 <div class="card"><div class="head"><span>演唱区</span><span id="queueHint" class="tag">队列: 0</span></div><div class="body">
-<div class="player"><img id="coverImage" class="cover" src="https://via.placeholder.com/320x440/1a100d/f8ddb0?text=KTV" alt="cover"><div>
+<div class="player"><img id="coverImage" class="cover" src="https://via.placeholder.com/320x440/0f172a/e2e8f0?text=KTV" alt="cover"><div>
 <h2 id="songTitle">等待点歌</h2><p id="songArtist" class="meta">请添加歌曲</p><p id="songStat" class="meta">播放量 - | 时长 -</p>
 <div class="row"><button id="playFirstBtn">播放第一首</button><button id="nextBtn" class="ghost">切歌</button><button id="openBiliBtn" class="ghost">打开来源页</button></div>
 <div class="mode"><button id="modeOriginalBtn">原唱</button><button id="modeAccompBtn" class="active">伴奏</button></div>
@@ -74,11 +76,12 @@ const $=id=>document.getElementById(id);
 const searchInput=$("searchInput"),searchBtn=$("searchBtn"),extractBtn=$("extractBtn"),separateBtn=$("separateBtn"),vocalBtn=$("vocalBtn"),refreshLocalBtn=$("refreshLocalBtn"),localSearchInput=$("localSearchInput"),localSearchBtn=$("localSearchBtn"),localSearchStat=$("localSearchStat"),targetText=$("targetText"),statusText=$("statusText"),resultList=$("resultList"),resultPager=$("resultPager"),resultCountText=$("resultCountText"),localList=$("localList"),queueList=$("queueList"),queueCountText=$("queueCountText"),queueHint=$("queueHint"),songTitle=$("songTitle"),songArtist=$("songArtist"),songStat=$("songStat"),coverImage=$("coverImage"),playFirstBtn=$("playFirstBtn"),nextBtn=$("nextBtn"),openBiliBtn=$("openBiliBtn"),modeOriginalBtn=$("modeOriginalBtn"),modeAccompBtn=$("modeAccompBtn"),accompVolume=$("accompVolume"),vocalVolume=$("vocalVolume"),accompVal=$("accompVal"),vocalVal=$("vocalVal"),ktvAudio=$("ktvAudio"),ktvVocal=$("ktvVocal"),ktvVideo=$("ktvVideo"),toast=$("toast");
 let currentResults=[],localItems=[],queue=[],currentSong=null,actionTargetSong=null,mediaMap={},currentMode="accomp",localSearchKeyword="",playToken=0,searchState={keyword:"",page:0,totalPages:1,totalResults:0,loading:false};
 let vocalReady=false;
+const VOCAL_GAIN=0.25;
 ktvVideo.muted=true;ktvVideo.volume=0;
 const clean=t=>(t||"unknown").replace(/<[^>]*>/g,"");
 const fmt=n=>Number(n||0).toLocaleString();
 const npath=p=>(p||"").trim().toLowerCase();
-const img=pic=>!pic?"https://via.placeholder.com/300x180/2a1a14/f8ddb0?text=No+Image":`/proxy/image?url=${encodeURIComponent(pic.startsWith("http")||pic.startsWith("//")?pic:"//"+pic.replace(/^\/\//,""))}`;
+const img=pic=>!pic?"https://via.placeholder.com/300x180/0f172a/e2e8f0?text=No+Image":`/proxy/image?url=${encodeURIComponent(pic.startsWith("http")||pic.startsWith("//")?pic:"//"+pic.replace(/^\/\//,""))}`;
 const furl=p=>p?`/api/local-file?path=${encodeURIComponent(p)}`:"";
 const sk=s=>!s?"":(s.bvid||s.id||npath(s.audio_path||s.audioPath||"")||s.arcurl||`${clean(s.title||"")}_${s.author||""}`);
 const mk=s=>!s?"":(s.bvid||s.id||npath(s.audio_path||s.audioPath||"")||npath(s.video_path||s.videoPath||"")||clean(s.title||""));
@@ -95,7 +98,7 @@ function stop(){playToken+=1;ktvAudio.pause();ktvVocal.pause();ktvVideo.pause()}
 function clearVocalTrack(){ktvVocal.pause();ktvVocal.removeAttribute("src");ktvVocal.load();vocalReady=false}
 function idle(){stop();ktvAudio.removeAttribute("src");ktvAudio.load();clearVocalTrack();ktvVideo.removeAttribute("src");ktvVideo.load();songTitle.textContent="等待点歌";songArtist.textContent="请添加歌曲";songStat.textContent="播放量 - | 时长 -"}
 function sync(){if(!ktvVideo.src)return;const d=Math.abs((ktvVideo.currentTime||0)-(ktvAudio.currentTime||0));if(d>.35)ktvVideo.currentTime=ktvAudio.currentTime||0;if(ktvAudio.paused&&!ktvVideo.paused)ktvVideo.pause();if(ktvVocal.src){const dv=Math.abs((ktvVocal.currentTime||0)-(ktvAudio.currentTime||0));if(dv>.08)ktvVocal.currentTime=ktvAudio.currentTime||0;if(ktvAudio.paused&&!ktvVocal.paused)ktvVocal.pause()}}
-function applyMixerVolumes(){ktvAudio.volume=Math.max(0,Math.min(1.0,Number(accompVolume.value||1)));ktvVocal.volume=Math.max(0,Math.min(1.0,Number(vocalVolume.value||0)));accompVal.textContent=`${Math.round(ktvAudio.volume*100)}%`;vocalVal.textContent=`${Math.round(ktvVocal.volume*100)}%`;if(ktvVocal.src){if(ktvVocal.volume>0&&(!ktvAudio.paused)&&ktvVocal.paused)ktvVocal.play().catch(()=>{});if(ktvVocal.volume===0&&(!ktvVocal.paused))ktvVocal.pause()}}
+function applyMixerVolumes(){ktvAudio.volume=Math.max(0,Math.min(1.0,Number(accompVolume.value||1)));ktvVocal.volume=Math.max(0,Math.min(1.0,Number(vocalVolume.value||0)*VOCAL_GAIN));accompVal.textContent=`${Math.round(ktvAudio.volume*100)}%`;vocalVal.textContent=`${Math.round(ktvVocal.volume*100)}%`;if(ktvVocal.src){if(ktvVocal.volume>0&&(!ktvAudio.paused)&&ktvVocal.paused)ktvVocal.play().catch(()=>{});if(ktvVocal.volume===0&&(!ktvVocal.paused))ktvVocal.pause()}}
 async function loadAudio(src,keep=0,restore=false){const tk=playToken;ktvAudio.pause();ktvAudio.src=furl(src);await new Promise((res,rej)=>{ktvAudio.addEventListener("loadedmetadata",()=>res(),{once:true});ktvAudio.addEventListener("error",()=>rej(new Error("音频加载失败")),{once:true})}).catch(e=>{if(tk===playToken)tip(e.message||"音频加载失败");throw e});if(tk!==playToken)return;const dur=Number(ktvAudio.duration||0),pos=dur>0?Math.min(keep,Math.max(dur-.05,0)):keep;ktvAudio.currentTime=Math.max(pos,0);if(restore){try{await ktvAudio.play()}catch(_){tip("音轨切换失败")}}}
 async function loadVocal(src,keep=0,restore=false){if(!src){clearVocalTrack();return}const tk=playToken;vocalReady=false;ktvVocal.pause();ktvVocal.src=furl(src);const ok=await new Promise((res)=>{ktvVocal.addEventListener("loadedmetadata",()=>res(true),{once:true});ktvVocal.addEventListener("error",()=>res(false),{once:true})});if(!ok){clearVocalTrack();return}if(tk!==playToken)return;const dur=Number(ktvVocal.duration||0),pos=dur>0?Math.min(keep,Math.max(dur-.05,0)):keep;ktvVocal.currentTime=Math.max(pos,0);vocalReady=true;if(restore&&ktvVocal.volume>0){ktvVocal.play().catch(()=>{})}}
 async function switchTrack(song){const p=playable(song);if(!p.audio)return;const tk=++playToken;const keep=Number(ktvAudio.currentTime||0),was=!ktvAudio.paused;if(p.dual){await loadAudio(p.audio,keep,false);if(tk!==playToken)return;await loadVocal(p.vocal,keep,false);if(tk!==playToken)return;applyMixerVolumes();if(was){await ktvAudio.play().catch(()=>{});if(Number(vocalVolume.value)>0&&ktvVocal.src)ktvVocal.play().catch(()=>{})}sync();return}if(currentMode==="accomp"&&!p.m.separatedPath)tip("该歌曲没有伴奏，已回退原唱");await loadAudio(p.audio,keep,was);if(tk!==playToken)return;await loadVocal("",0,false);if(tk!==playToken)return;applyMixerVolumes();sync()}

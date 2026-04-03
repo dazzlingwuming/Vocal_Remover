@@ -1,7 +1,7 @@
 ﻿# Vocal Remover KTV (Bilibili LAN KTV)
 
 基于 Bilibili 搜索 + 本地提取 + 人声/伴奏分离 的家庭 KTV 项目。  
-支持 TV 页面播放、手机扫码点歌、队列管理、原唱/伴奏切换和音量控制。
+支持 TV 页面播放、手机扫码点歌、队列管理、原唱/伴奏切换，以及独立手机 App 客户端目录。
 
 ## 功能特性
 
@@ -12,12 +12,14 @@
 - TV 端播放队列 + 自动下一首
 - 局域网二维码入房（房间模式）
 - 本地媒体库浏览/筛选/点歌
+- `mobile_app/` Android App 客户端目录（Capacitor）
 
 ## 项目结构
 
 - `Bili_video_audio/falsk_reseach/flask_search.py`：Flask 主服务
 - `Bili_video_audio/falsk_reseach/templates/tv.html`：TV 端页面
 - `Bili_video_audio/falsk_reseach/templates/mobile.html`：手机点歌页面
+- `mobile_app/`：Android App 原生壳与独立手机客户端
 - `Bili_video_audio/output/`：音视频、封面、分离结果统一存放目录
 - `models/inst_v1e.ckpt`：分离模型权重
 - `configs/inst_v1e.ckpt.yaml`：模型配置
@@ -122,10 +124,34 @@ python Bili_video_audio/falsk_reseach/flask_search.py
 - `configs/inst_v1e.ckpt.yaml` 是否存在
 - `torch` 是否正确安装（CPU/CUDA 版本是否匹配你的环境）
 
+## 手机 App 说明
+
+当前仓库通过 `mobile_app/` 目录提供独立手机 App 客户端骨架。
+
+当前推荐的职责划分是：
+
+- 主机端 Flask 只负责接收 `bvid` 并执行音频提取 / 人声伴奏分离
+- 手机 App 负责搜索、提交 `bvid`、查看任务、下载分离结果并在本地播放
+- 搜索源可以是独立服务，不必和主机端部署在一起
+
+当前主机端新增的 App 接口包括：
+
+- `POST /api/separate-from-bvid`
+- `GET /api/task/<task_id>`
+- `GET /api/result/<task_id>/meta`
+- `GET /api/result/<task_id>/accompaniment`
+- `GET /api/result/<task_id>/vocal`
+- `GET /api/result/<task_id>/video`
+
+当前 `mobile_app/` 默认搜索源为：
+
+- `https://api.bilibili.com/x/web-interface/search/type`
+
+也兼容现有主机里的 `/api/search` 返回结构，但这只是过渡兼容，不再作为默认架构前提。
+
 ## Roadmap
 
-- PWA 手机安装
-- Android TV/机顶盒壳应用
+- Android TV / 机顶盒壳应用
 - 鉴权与房间管理
 - 生产部署（Nginx + WSGI）
 
