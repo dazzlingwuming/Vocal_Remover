@@ -20,11 +20,23 @@ from PIL import Image, ImageDraw
 from bilibili_api import search, sync
 from bilibili_api.search import SearchObjectType
 from bilibili_api.video import Video, VideoDownloadURLDataDetecter
-from flask import Flask, jsonify, make_response, render_template, request, send_file
+from flask import Flask, jsonify, make_response, redirect, render_template, request, send_file
 
 import src.tools as separator_tools
 
 app = Flask(__name__)
+
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get("Origin", "*")
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Vary"] = "Origin"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Range"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Expose-Headers"] = "Content-Length, Content-Range, Accept-Ranges"
+    response.headers["Access-Control-Allow-Credentials"] = "false"
+    return response
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BILI_ROOT = Path(__file__).resolve().parents[1]
@@ -139,8 +151,8 @@ def detect_lan_ip() -> str:
         except Exception:
             pass
 
-    def parse_ipconfig_ipv4() -> list[str]:
-        ips: list[str] = []
+    def parse_ipconfig_ipv4() -> list[tuple[str, str]]:
+        pairs: list[tuple[str, str]] = []
         try:
             proc = subprocess.run(
                 ["ipconfig"],
@@ -150,10 +162,16 @@ def detect_lan_ip() -> str:
                 errors="ignore",
             )
             out = proc.stdout or ""
-            # Example line: "IPv4 地址 . . . . . . . . . . . . : 192.168.137.1"
-            for m in re.finditer(r"IPv4[^\n:：]*[:：]\s*([0-9]{1,3}(?:\.[0-9]{1,3}){3})", out):
+            blocks = re.split(r"\r?\n\r?\n+", out)
+            for block in blocks:
+                header = (block.splitlines() or [""])[0].strip().rstrip(":")
+                if not header:
+                    continue
+                m = re.search(r"IPv4[^\n:：]*[:：]\s*([0-9]{1,3}(?:\.[0-9]{1,3}){3})", block)
+                if not m:
+                    continue
                 ip = (m.group(1) or "").strip()
-                if not ip or ip.startswith("127.") or ip == "0.0.0.0":
+                if not ip or ip.startswith("127.") or ip == "0.0.0.0" or ip.startswith("169.254."):
                     continue
                 try:
                     ip_obj = ipaddress.ip_address(ip)
@@ -161,16 +179,33 @@ def detect_lan_ip() -> str:
                         continue
                 except Exception:
                     continue
-                if ip not in ips:
-                    ips.append(ip)
+                name_lower = header.lower()
+                if any(bad in name_lower for bad in ["meta", "vmware", "virtualbox", "hyper-v", "loopback", "bluetooth"]):
+                    continue
+                if ip.startswith("198.18."):
+                    continue
+                pair = (header, ip)
+                if pair not in pairs:
+                    pairs.append(pair)
         except Exception:
             pass
-        return ips
+        return pairs
 
-    cfg_ips = parse_ipconfig_ipv4()
+    cfg_pairs = parse_ipconfig_ipv4()
+    cfg_ips = [ip for _name, ip in cfg_pairs]
     # Windows hotspot usually binds 192.168.137.1; prioritize this for mobile scan/join.
     for ip in cfg_ips:
         if ip.startswith("192.168.137."):
+            return ip
+    for name, ip in cfg_pairs:
+        name_lower = name.lower()
+        if ("本地连接*" in name or "local connection*" in name_lower or "wlan" in name_lower or "无线局域网" in name) and ip.startswith("192.168."):
+            return ip
+    for ip in cfg_ips:
+        if ip.startswith("192.168."):
+            return ip
+    for ip in cfg_ips:
+        if ip.startswith("10."):
             return ip
 
     try:
@@ -959,6 +994,87 @@ def worker_separate(task_id: str, payload: dict):
         update_task(task_id, status="failed", progress=100, message="separate failed", error=str(exc))
 
 
+def worker_separate_from_bvid(task_id: str, payload: dict):
+    update_task(task_id, status="running", progress=3, message="prepare bvid separate")
+    internal_task_ids: list[str] = []
+    try:
+        bvid = payload.get("bvid") or parse_bvid(payload.get("arcurl", ""))
+        if not bvid:
+            raise ValueError("missing bvid")
+
+        cached = find_cached_by_bvid(bvid)
+        if cached.get("separated_path") and file_exists(cached.get("separated_path", "")) and cached.get("vocal_path") and file_exists(cached.get("vocal_path", "")):
+            update_task(
+                task_id,
+                status="done",
+                progress=100,
+                message="separate cached",
+                result={
+                    "bvid": bvid,
+                    "title": cached.get("title", payload.get("title", "")),
+                    "audio_path": cached.get("audio_path", ""),
+                    "video_path": cached.get("video_path", ""),
+                    "cover_path": cached.get("cover_path", ""),
+                    "accompaniment_path": cached.get("separated_path", ""),
+                    "vocal_path": cached.get("vocal_path", ""),
+                    "from_cache": True,
+                },
+            )
+            return
+
+        extract_payload = {
+            "bvid": bvid,
+            "arcurl": payload.get("arcurl", ""),
+            "title": payload.get("title", ""),
+            "pic": payload.get("pic", ""),
+        }
+        extract_task_id = create_task("extract_internal", extract_payload)
+        internal_task_ids.append(extract_task_id)
+        update_task(task_id, progress=8, message="extract start")
+        worker_extract(extract_task_id, extract_payload)
+        extract_task = get_task(extract_task_id) or {}
+        if extract_task.get("status") != "done":
+            raise RuntimeError(extract_task.get("error") or "extract failed")
+
+        extract_result = extract_task.get("result") or {}
+        audio_path = extract_result.get("audio_path", "")
+        if not audio_path:
+            raise RuntimeError("extract audio missing")
+
+        separate_payload = {
+            "bvid": bvid,
+            "title": extract_result.get("title", payload.get("title", "")),
+            "audio_path": audio_path,
+        }
+        separate_task_id = create_task("separate_internal", separate_payload)
+        internal_task_ids.append(separate_task_id)
+        update_task(task_id, progress=62, message="separate start")
+        worker_separate(separate_task_id, separate_payload)
+        separate_task = get_task(separate_task_id) or {}
+        if separate_task.get("status") != "done":
+            raise RuntimeError(separate_task.get("error") or "separate failed")
+
+        separate_result = separate_task.get("result") or {}
+        update_task(
+            task_id,
+            status="done",
+            progress=100,
+            message="bvid separate done",
+            result={
+                "bvid": bvid,
+                "title": extract_result.get("title", payload.get("title", "")),
+                "audio_path": audio_path,
+                "video_path": extract_result.get("video_path", ""),
+                "cover_path": extract_result.get("cover_path", ""),
+                "accompaniment_path": separate_result.get("output_audio", ""),
+                "vocal_path": separate_result.get("vocal_audio", ""),
+                "from_cache": False,
+            },
+        )
+    except Exception as exc:
+        update_task(task_id, status="failed", progress=100, message="bvid separate failed", error=str(exc))
+
+
 def start_task(task_id: str, target, payload: dict):
     thread = threading.Thread(target=target, args=(task_id, payload), daemon=True)
     thread.start()
@@ -966,6 +1082,11 @@ def start_task(task_id: str, target, payload: dict):
 
 @app.route("/")
 def index():
+    return render_template("home.html")
+
+
+@app.route("/desktop")
+def desktop_page():
     return render_template("index.html")
 
 
@@ -978,7 +1099,31 @@ def tv_page():
 @app.route("/mobile")
 def mobile_page():
     room = request.args.get("room", "ktv001")
-    return render_template("mobile.html", room_id=room)
+    return render_template("mobile.html", room_id=room, page_name="search")
+
+
+@app.route("/mobile/search")
+def mobile_search_page():
+    room = request.args.get("room", "ktv001")
+    return render_template("mobile.html", room_id=room, page_name="search")
+
+
+@app.route("/mobile/player")
+def mobile_player_page():
+    room = request.args.get("room", "ktv001")
+    return redirect(f"/mobile/search?room={room}")
+
+
+@app.route("/mobile/queue")
+def mobile_queue_page():
+    room = request.args.get("room", "ktv001")
+    return render_template("mobile.html", room_id=room, page_name="queue")
+
+
+@app.route("/mobile/library")
+def mobile_library_page():
+    room = request.args.get("room", "ktv001")
+    return render_template("mobile.html", room_id=room, page_name="library")
 
 
 @app.route("/api/search")
@@ -1241,6 +1386,18 @@ def api_extract():
     return jsonify({"success": True, "task_id": task_id})
 
 
+@app.route("/api/separate-from-bvid", methods=["POST"])
+def api_separate_from_bvid():
+    payload = request.get_json(silent=True) or {}
+    bvid = payload.get("bvid") or parse_bvid(payload.get("arcurl", ""))
+    if not bvid:
+        return jsonify({"success": False, "message": "missing bvid"}), 400
+    payload["bvid"] = bvid
+    task_id = create_task("separate_from_bvid", payload)
+    start_task(task_id, worker_separate_from_bvid, payload)
+    return jsonify({"success": True, "task_id": task_id})
+
+
 @app.route("/api/separate", methods=["POST"])
 def api_separate():
     payload = request.get_json(silent=True) or {}
@@ -1257,6 +1414,43 @@ def api_task(task_id: str):
     if not task:
         return jsonify({"success": False, "message": "task not found"}), 404
     return jsonify({"success": True, "task": task})
+
+
+@app.route("/api/result/<task_id>/meta")
+def api_result_meta(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        return jsonify({"success": False, "message": "task not found"}), 404
+    if task.get("status") != "done":
+        return jsonify({"success": False, "message": "task not done"}), 409
+    return jsonify({"success": True, "result": task.get("result") or {}})
+
+
+@app.route("/api/result/<task_id>/<kind>")
+def api_result_file(task_id: str, kind: str):
+    task = get_task(task_id)
+    if not task:
+        return jsonify({"success": False, "message": "task not found"}), 404
+    if task.get("status") != "done":
+        return jsonify({"success": False, "message": "task not done"}), 409
+    result = task.get("result") or {}
+    field_map = {
+        "accompaniment": "accompaniment_path",
+        "vocal": "vocal_path",
+        "audio": "audio_path",
+        "video": "video_path",
+    }
+    field = field_map.get(kind)
+    if not field:
+        return jsonify({"success": False, "message": "invalid result kind"}), 400
+    raw_path = result.get(field, "")
+    if not raw_path:
+        return jsonify({"success": False, "message": "result file missing"}), 404
+    try:
+        path = resolve_allowed_file(raw_path)
+        return send_file(path, as_attachment=False, conditional=True)
+    except Exception as exc:
+        return jsonify({"success": False, "message": str(exc)}), 404
 
 
 @app.route("/api/local-file")
