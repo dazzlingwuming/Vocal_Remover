@@ -4,7 +4,7 @@ import os
 from bilibili_api.video import Video, AudioStreamDownloadURL, VideoDownloadURLDataDetecter
 from curl_cffi import requests
 
-credential = Credential(sessdata="e181e290%2C1786178882%2Ccdb01%2A21CjCtjNYiylroxRsgt8SkXm59K2JkPd5eMIL_-eSf_I5U_9PQDlp1JS9WQ6uFvXavmkYSVnVSaWtKX184eEFydkpNTzRfdVBVSURmYjZTNmpkR1piNUwzWnhrbWMzVkxrVHBKVE84aXJlRldCSVFyN2diaExkXzlYM013MHRLM2FrNGNXWDFubTF3IIEC", bili_jct="7bc50afec6215d63d71e928c62ea8926")
+credential = Credential(sessdata="")
 
 AUDIO_LIST_ID = 30232
 
