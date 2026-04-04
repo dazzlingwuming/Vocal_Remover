@@ -3,8 +3,8 @@ import asyncio
 from bilibili_api import video, Credential, HEADERS, get_client
 import os
 
-SESSDATA = "e181e290%2C1786178882%2Ccdb01%2A21CjCtjNYiylroxRsgt8SkXm59K2JkPd5eMIL_-eSf_I5U_9PQDlp1JS9WQ6uFvXavmkYSVnVSaWtKX184eEFydkpNTzRfdVBVSURmYjZTNmpkR1piNUwzWnhrbWMzVkxrVHBKVE84aXJlRldCSVFyN2diaExkXzlYM013MHRLM2FrNGNXWDFubTF3IIEC"
-BILI_JCT = "7bc50afec6215d63d71e928c62ea8926"
+SESSDATA = ""
+BILI_JCT = ""
 BUVID3 = ""
 
 # FFMPEG 路径，查看：http://ffmpeg.org/
